@@ -323,9 +323,9 @@ footer p{font-size:12px;color:var(--muted)}
   <h2 class="sec-title b-title">Обери свій план</h2>
   <p class="sec-sub">14 днів безкоштовно. Без картки. Без питань.</p>
   <div class="billing-toggle">
-    <button class="btog active" id="b-tog-m" onclick="setBilling('b','m')">Місячно</button>
-    <button class="btog" id="b-tog-q" onclick="setBilling('b','q')">Квартально<span class="btog-save">-15%</span></button>
-    <button class="btog" id="b-tog-y" onclick="setBilling('b','y')">Річно<span class="btog-save">-25%</span></button>
+    <button class="btog active" id="b-tog-m" onclick="setBilling('b','m')">Місячний</button>
+    <button class="btog" id="b-tog-q" onclick="setBilling('b','q')">Квартальний<span class="btog-save">-20%</span></button>
+    <button class="btog" id="b-tog-y" onclick="setBilling('b','y')">Річний<span class="btog-save">-30%</span></button>
   </div>
   <div class="pricing-grid" style="margin-top:32px">
     <div class="plan">
@@ -454,9 +454,9 @@ footer p{font-size:12px;color:var(--muted)}
   <div class="f-label" style="display:block;text-align:center">Тариф</div>
   <h2 class="sec-title f-title" style="text-align:center">Просто і зрозуміло</h2>
   <div class="billing-toggle">
-    <button class="btog active gfin" id="f-tog-m" onclick="setBilling('f','m')">Місячно</button>
-    <button class="btog" id="f-tog-q" onclick="setBilling('f','q')">Квартально<span class="btog-save">-15%</span></button>
-    <button class="btog" id="f-tog-y" onclick="setBilling('f','y')">Річно<span class="btog-save">-25%</span></button>
+    <button class="btog active gfin" id="f-tog-m" onclick="setBilling('f','m')">Місячний</button>
+    <button class="btog" id="f-tog-q" onclick="setBilling('f','q')">Квартальний<span class="btog-save">-13%</span></button>
+    <button class="btog" id="f-tog-y" onclick="setBilling('f','y')">Річний<span class="btog-save">-34%</span></button>
   </div>
   <div class="f-plan">
     <div class="plan-name">💰 Фінансовий бот</div>
@@ -493,7 +493,7 @@ footer p{font-size:12px;color:var(--muted)}
 </div>
 <script>
 var GAS_URL='https://script.google.com/macros/s/AKfycbzY_RZVOaLvmKUNlbHeoDqVxGcVQVcbrPBum6Wjzx520lQxC2Ho92WH8x5H9Xje-Vgz1Q/exec';
-var PRICES={std:{m:499,q:419,y:349},pro:{m:599,q:499,y:449},fin:{m:149,q:129,y:99}};
+var PRICES={std:{m:499,q:400,y:349},pro:{m:599,q:499,y:449},fin:{m:149,q:129,y:99}};
 
 function setBilling(page,period){
   var isFin=(page==='f');
