@@ -593,17 +593,16 @@ function submitModal(){
   btn.disabled=true;
   btn.textContent='Надсилаємо...';
 
+  var params='type=lead'
+    +'&name='+encodeURIComponent(name)
+    +'&contact='+encodeURIComponent(contact)
+    +'&botType='+(source==='Фінансовий бот'?'finance':'commercial')
+    +'&date='+encodeURIComponent(new Date().toLocaleString('uk-UA'));
   fetch(GAS_URL,{
     method:'POST',
     mode:'no-cors',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      type:'lead',
-      name:name,
-      contact:contact,
-      botType:source==='Фінансовий бот'?'finance':'commercial',
-      date:new Date().toLocaleString('uk-UA')
-    })
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:params
   })
   .then(function(){
     document.getElementById('modal-form-view').style.display='none';
