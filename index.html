@@ -589,6 +589,13 @@ function submitModal(){
   .then(function(){
     document.getElementById('modal-form-view').style.display='none';
     document.getElementById('modal-success-view').style.display='block';
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      event: 'lead_form_submit',
+      form_name: 'access_request',
+      bot_type: source === 'Фінансовий бот' ? 'finance' : 'commercial',
+      bot_name: source
+    });
   })
   .catch(function(){
     document.getElementById('modal-form-view').style.display='none';
