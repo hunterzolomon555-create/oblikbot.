@@ -215,7 +215,10 @@ footer p{font-size:12px;color:var(--muted)}
 </style>
 </head>
 <body>
-<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-54FSWZVK" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-54FSWZVK"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
 <!-- MODAL -->
 <div class="modal-overlay" id="modal">
   <div class="modal">
@@ -324,7 +327,7 @@ footer p{font-size:12px;color:var(--muted)}
   <p class="sec-sub">14 днів безкоштовно. Без картки. Без питань.</p>
   <div class="billing-toggle">
     <button class="btog active" id="b-tog-m" onclick="setBilling('b','m')">Місячний</button>
-    <button class="btog" id="b-tog-q" onclick="setBilling('b','q')">Квартальний<span class="btog-save">-20%</span></button>
+    <button class="btog" id="b-tog-q" onclick="setBilling('b','q')">Квартальний<span class="btog-save">-16%</span></button>
     <button class="btog" id="b-tog-y" onclick="setBilling('b','y')">Річний<span class="btog-save">-30%</span></button>
   </div>
   <div class="pricing-grid" style="margin-top:32px">
@@ -340,7 +343,6 @@ footer p{font-size:12px;color:var(--muted)}
         <li>Нова Пошта нативно</li>
         <li>Масовий імпорт товарів</li>
         <li>1 користувач включено</li>
-        <li style="color:var(--accent2)">+199 грн/міс за кожного додаткового співробітника</li>
         <li class="gray">Фінансовий бот</li>
         <li class="gray">Спільний сімейний бюджет</li>
       </ul>
@@ -361,7 +363,6 @@ footer p{font-size:12px;color:var(--muted)}
         <li>Норма заощаджень</li>
         <li>Спільний бюджет з партнером або сім'єю</li>
         <li>1 користувач включено</li>
-        <li style="color:var(--accent2)">+199 грн/міс за кожного додаткового співробітника</li>
       </ul>
       <button class="plan-btn-p" onclick="openModal()">Спробувати безкоштовно</button>
     </div>
@@ -495,7 +496,7 @@ footer p{font-size:12px;color:var(--muted)}
 </div>
 <script>
 var GAS_URL='https://script.google.com/macros/s/AKfycbzY_RZVOaLvmKUNlbHeoDqVxGcVQVcbrPBum6Wjzx520lQxC2Ho92WH8x5H9Xje-Vgz1Q/exec';
-var PRICES={std:{m:499,q:400,y:349},pro:{m:599,q:499,y:449},fin:{m:149,q:129,y:99}};
+var PRICES={std:{m:499,q:419,y:349},pro:{m:599,q:499,y:449},fin:{m:149,q:129,y:99}};
 
 function setBilling(page,period){
   var isFin=(page==='f');
@@ -564,8 +565,7 @@ function showFormView(){
 }
 
 function validateContact(val){
-  // Приймаємо @username або номер телефону
-  return val.startsWith('@') && val.length > 1 || /^\+?[\d\s\-\(\)]{7,}$/.test(val);
+  return (val.startsWith('@') && val.length>1)||/^\+?[\d\s\-\(\)]{7,}$/.test(val);
 }
 
 function submitModal(){
@@ -574,42 +574,21 @@ function submitModal(){
   var source=document.getElementById('modal-source').value;
   var valid=true;
   clearErrors();
-
-  if(!name){
-    document.getElementById('err-name').textContent="Введіть ваше ім'я";
-    document.getElementById('modal-name').classList.add('err');
-    valid=false;
-  }
-  if(!contact){
-    document.getElementById('err-contact').textContent='Введіть нікнейм або телефон';
-    document.getElementById('modal-contact').classList.add('err');
-    valid=false;
-  } else if(!validateContact(contact)){
-    document.getElementById('err-contact').textContent='Введіть @username або номер телефону';
-    document.getElementById('modal-contact').classList.add('err');
-    valid=false;
-  }
+  if(!name){document.getElementById('err-name').textContent="Введіть ваше ім'я";document.getElementById('modal-name').classList.add('err');valid=false;}
+  if(!contact){document.getElementById('err-contact').textContent='Введіть нікнейм або телефон';document.getElementById('modal-contact').classList.add('err');valid=false;}
+  else if(!validateContact(contact)){document.getElementById('err-contact').textContent='Введіть @username або номер телефону';document.getElementById('modal-contact').classList.add('err');valid=false;}
   if(!valid)return;
-
   var btn=document.getElementById('modal-submit-btn');
-  btn.disabled=true;
-  btn.textContent='Надсилаємо...';
-
+  btn.disabled=true;btn.textContent='Надсилаємо...';
   var params='type=lead'
     +'&name='+encodeURIComponent(name)
     +'&contact='+encodeURIComponent(contact)
     +'&botType='+(source==='Фінансовий бот'?'finance':'commercial')
     +'&date='+encodeURIComponent(new Date().toLocaleString('uk-UA'));
-  fetch(GAS_URL,{
-    method:'POST',
-    mode:'no-cors',
-    headers:{'Content-Type':'application/x-www-form-urlencoded'},
-    body:params
-  })
+  fetch(GAS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:params})
   .then(function(){
     document.getElementById('modal-form-view').style.display='none';
     document.getElementById('modal-success-view').style.display='block';
-    if(window.dataLayer){window.dataLayer.push({event:'form_submit',bot_source:source});}
   })
   .catch(function(){
     document.getElementById('modal-form-view').style.display='none';
