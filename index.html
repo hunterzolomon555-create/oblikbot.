@@ -45,6 +45,26 @@ a{color:inherit;text-decoration:none}
 .modal-submit:disabled{opacity:.5;cursor:not-allowed}
 .modal-fine{text-align:center;font-size:12px;color:var(--muted);margin-top:12px}
 .field-err{font-size:12px;color:#f07070;margin-top:5px;min-height:16px}
+
+/* ── Success view з кнопкою-посиланням ── */
+.invite-btn{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  width:100%;padding:16px;border-radius:40px;border:none;
+  font-family:var(--fb);font-size:15px;font-weight:700;cursor:pointer;
+  text-decoration:none;transition:opacity .2s,transform .15s;
+  margin-bottom:12px;
+}
+.invite-btn.comm{background:var(--a);color:#fff}
+.invite-btn.fin{background:var(--green);color:#0a0a0f}
+.invite-btn:hover{opacity:.86;transform:translateY(-1px)}
+.invite-note{font-size:12px;color:var(--muted);text-align:center;line-height:1.5;margin-top:4px}
+.invite-pulse{
+  display:inline-block;width:8px;height:8px;border-radius:50%;
+  background:var(--green);margin-right:6px;
+  animation:pulse 1.8s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(0.8)}}
+
 nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:18px 40px;background:rgba(10,10,15,0.9);backdrop-filter:blur(18px);border-bottom:1px solid var(--border)}
 .logo{font-family:var(--fh);font-size:17px;font-weight:700;cursor:pointer}
 .logo span{color:var(--a2)}
@@ -218,11 +238,13 @@ footer p{font-size:12px;color:var(--muted)}
 <!-- Google Tag Manager (noscript) -->
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-54FSWZVK"
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-<!-- End Google Tag Manager (noscript) -->
+
 <!-- MODAL -->
 <div class="modal-overlay" id="modal">
   <div class="modal">
     <button class="modal-close" onclick="closeModal()">×</button>
+
+    <!-- Форма -->
     <div id="modal-form-view">
       <h3>Отримати доступ</h3>
       <p class="modal-sub">Залиште контакт — надішлемо посилання-запрошення протягом кількох хвилин.</p>
@@ -238,15 +260,29 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div class="field-err" id="err-contact"></div>
       </div>
       <input type="hidden" id="modal-source" value="">
+      <input type="hidden" id="modal-bottype" value="">
       <button class="modal-submit" id="modal-submit-btn" onclick="submitModal()">→ Надіслати</button>
       <p class="modal-fine">Без спаму · Відповідаємо швидко</p>
     </div>
-    <div id="modal-success-view" style="display:none;text-align:center;padding:20px 0">
-      <div style="font-size:48px;margin-bottom:16px">✅</div>
-      <h3 style="margin-bottom:12px">Заявку отримано!</h3>
-      <p class="modal-sub" style="margin-bottom:24px">Надішлемо посилання протягом кількох хвилин.</p>
-      <button class="modal-submit" onclick="closeModal()">Закрити</button>
+
+    <!-- ✅ Успіх з кнопкою запуску бота -->
+    <div id="modal-success-view" style="display:none;text-align:center;padding:10px 0">
+      <div style="font-size:44px;margin-bottom:16px">🎉</div>
+      <h3 style="margin-bottom:10px">Доступ готовий!</h3>
+      <p class="modal-sub" style="margin-bottom:24px">
+        Натисніть кнопку нижче щоб відкрити бота і розпочати 14-денний тріал.
+      </p>
+      <a id="invite-link-btn" href="#" target="_blank" class="invite-btn comm">
+        <span class="invite-pulse"></span>
+        <span id="invite-btn-text">▶️ Відкрити бота і почати</span>
+      </a>
+      <p class="invite-note">
+        Посилання дійсне 72 години · Реєстрація займе 1 хвилину
+      </p>
+      <button class="modal-submit" style="margin-top:20px;background:transparent;border:1px solid var(--border2);color:var(--muted);font-size:13px" onclick="closeModal()">Закрити</button>
     </div>
+
+    <!-- ⚠️ Помилка -->
     <div id="modal-error-view" style="display:none;text-align:center;padding:20px 0">
       <div style="font-size:48px;margin-bottom:16px">⚠️</div>
       <h3 style="margin-bottom:12px">Щось пішло не так</h3>
@@ -255,6 +291,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>
   </div>
 </div>
+
 <nav>
   <div class="logo" onclick="showPage('business')">Облік<span>Бот</span></div>
   <div class="nav-tabs">
@@ -263,6 +300,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </div>
   <button class="nav-btn" id="nav-cta" onclick="openModal()">Спробувати безкоштовно</button>
 </nav>
+
 <!-- BUSINESS PAGE -->
 <div class="page active" id="page-business">
 <section id="b-hero">
@@ -338,13 +376,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <div class="price-total" id="b-std-total"></div>
       <div class="plan-first">✦ Перший місяць — лише 250 грн</div>
       <ul class="plan-list">
-        <li>Склад, продажі, витрати</li>
-        <li>Звіти щодня і щотижня</li>
-        <li>Нова Пошта нативно</li>
-        <li>Масовий імпорт товарів</li>
+        <li>Склад, продажі, витрати</li><li>Звіти щодня і щотижня</li>
+        <li>Нова Пошта нативно</li><li>Масовий імпорт товарів</li>
         <li>1 користувач включено</li>
-        <li class="gray">Фінансовий бот</li>
-        <li class="gray">Спільний сімейний бюджет</li>
+        <li class="gray">Фінансовий бот</li><li class="gray">Спільний сімейний бюджет</li>
       </ul>
       <button class="plan-btn-s" onclick="openModal()">Спробувати безкоштовно</button>
     </div>
@@ -381,11 +416,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 </div></section>
 <section id="b-cta"><div class="b-glow-bot"></div><div class="container">
   <h2>Підключення за <span>1 хвилину</span></h2>
-  <p class="sub">Напишіть нам — отримаєте посилання-запрошення.<br>Натиснули /start, пройшли онбординг, почали працювати.</p>
-  <button class="b-btn" style="font-size:17px;padding:18px 44px" onclick="openModal()">→ Написати і отримати доступ</button>
+  <p class="sub">Залиште контакт — отримаєте посилання одразу.<br>Натиснули /start, пройшли онбординг, почали працювати.</p>
+  <button class="b-btn" style="font-size:17px;padding:18px 44px" onclick="openModal()">→ Отримати доступ зараз</button>
 </div></section>
 <footer><div class="logo">Облік<span>Бот</span></div><p>© ОблікБот</p></footer>
 </div>
+
 <!-- FINBOT PAGE -->
 <div class="page" id="page-fin">
 <section id="f-hero"><div class="f-glow-top"></div>
@@ -485,15 +521,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 </div></section>
 <section id="f-cta"><div class="f-glow-bot"></div><div class="container">
   <h2>Підключення за <span>5 хвилин</span></h2>
-  <p class="sub">Залиште контакт — надішлемо посилання-запрошення.<br>Натиснули /start, пройшли онбординг, записали перші операції. Готово.</p>
-  <button class="f-btn" style="font-size:17px;padding:18px 44px" onclick="openModal()">→ Отримати доступ</button>
+  <p class="sub">Залиште контакт — отримаєте посилання одразу.<br>Натиснули /start, пройшли онбординг, записали перші операції. Готово.</p>
+  <button class="f-btn" style="font-size:17px;padding:18px 44px" onclick="openModal()">→ Отримати доступ зараз</button>
 </div></section>
 <footer><div class="logo">Облік<span>Бот</span></div><p>© ОблікБот</p></footer>
 </div>
+
 <div class="mob-nav" id="mob-nav">
   <button class="mob-tab active" id="mob-tab-business" onclick="showPage('business')">🛒 Бізнес-бот</button>
   <button class="mob-tab" id="mob-tab-fin" onclick="showPage('fin')">💰 Фінансовий бот</button>
 </div>
+
 <script>
 var GAS_URL='https://script.google.com/macros/s/AKfycbzY_RZVOaLvmKUNlbHeoDqVxGcVQVcbrPBum6Wjzx520lQxC2Ho92WH8x5H9Xje-Vgz1Q/exec';
 var PRICES={std:{m:499,q:419,y:349},pro:{m:599,q:499,y:449},fin:{m:149,q:129,y:99}};
@@ -535,8 +573,10 @@ function showPage(p){
 function openModal(){
   var isFin=document.getElementById('page-fin').classList.contains('active');
   var src=isFin?'Фінансовий бот':'Бізнес-бот';
+  var botType=isFin?'finance':'commercial';
   var color=isFin?'background:rgba(46,204,138,0.15);color:#5df0ae':'background:rgba(124,92,252,0.15);color:#a98bff';
   document.getElementById('modal-source').value=src;
+  document.getElementById('modal-bottype').value=botType;
   var badge=document.getElementById('modal-source-badge');
   badge.textContent='Бот: '+src;
   badge.style.cssText='display:inline-block;margin-bottom:16px;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:600;'+color;
@@ -572,30 +612,56 @@ function submitModal(){
   var name=document.getElementById('modal-name').value.trim();
   var contact=document.getElementById('modal-contact').value.trim();
   var source=document.getElementById('modal-source').value;
+  var botType=document.getElementById('modal-bottype').value;
   var valid=true;
   clearErrors();
   if(!name){document.getElementById('err-name').textContent="Введіть ваше ім'я";document.getElementById('modal-name').classList.add('err');valid=false;}
   if(!contact){document.getElementById('err-contact').textContent='Введіть нікнейм або телефон';document.getElementById('modal-contact').classList.add('err');valid=false;}
   else if(!validateContact(contact)){document.getElementById('err-contact').textContent='Введіть @username або номер телефону';document.getElementById('modal-contact').classList.add('err');valid=false;}
   if(!valid)return;
+
   var btn=document.getElementById('modal-submit-btn');
   btn.disabled=true;btn.textContent='Надсилаємо...';
+
   var params='type=lead'
     +'&name='+encodeURIComponent(name)
     +'&contact='+encodeURIComponent(contact)
-    +'&botType='+(source==='Фінансовий бот'?'finance':'commercial')
+    +'&botType='+encodeURIComponent(botType)
     +'&date='+encodeURIComponent(new Date().toLocaleString('uk-UA'));
-  fetch(GAS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:params})
-  .then(function(){
-    document.getElementById('modal-form-view').style.display='none';
-    document.getElementById('modal-success-view').style.display='block';
+
+  // ── Важливо: mode:'cors' щоб читати відповідь ──────────
+  fetch(GAS_URL,{
+    method:'POST',
+    mode:'cors',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:params
+  })
+  .then(function(r){return r.json();})
+  .then(function(data){
+    // GTM подія
     window.dataLayer = window.dataLayer || [];
     window.dataLayer.push({
-      event: 'lead_form_submit',
-      form_name: 'access_request',
-      bot_type: source === 'Фінансовий бот' ? 'finance' : 'commercial',
-      bot_name: source
+      event:'lead_form_submit',
+      form_name:'access_request',
+      bot_type:botType,
+      bot_name:source
     });
+
+    document.getElementById('modal-form-view').style.display='none';
+
+    if(data.ok && data.inviteLink){
+      // ── Показуємо кнопку з посиланням ──────────────────
+      var invBtn=document.getElementById('invite-link-btn');
+      invBtn.href=data.inviteLink;
+      invBtn.className='invite-btn '+(botType==='finance'?'fin':'comm');
+      document.getElementById('invite-btn-text').textContent=
+        botType==='finance'?'▶️ Відкрити фінансовий бот':'▶️ Відкрити бізнес-бот';
+      document.getElementById('modal-success-view').style.display='block';
+    } else {
+      // GAS повернув ok але без посилання — fallback на стандартний success
+      document.getElementById('modal-success-view').style.display='block';
+      document.getElementById('invite-link-btn').style.display='none';
+    }
   })
   .catch(function(){
     document.getElementById('modal-form-view').style.display='none';
