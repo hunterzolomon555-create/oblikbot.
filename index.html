@@ -534,7 +534,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 </div>
 
 <script>
-var GAS_URL='https://script.google.com/macros/s/AKfycbw6i7zCbP1c0BMNVtlrPLzhtdh5QLCkDXmEX5qRt_qP6UnJ-bgjk4olblP_fdpZr6Admw/exec';
+var GAS_URL='https://script.google.com/macros/s/AKfycbzY_RZVOaLvmKUNlbHeoDqVxGcVQVcbrPBum6Wjzx520lQxC2Ho92WH8x5H9Xje-Vgz1Q/exec';
 var PRICES={std:{m:499,q:419,y:349},pro:{m:599,q:499,y:449},fin:{m:149,q:129,y:99}};
 
 function setBilling(page,period){
@@ -624,47 +624,47 @@ function submitModal(){
   var btn=document.getElementById('modal-submit-btn');
   btn.disabled=true;btn.textContent='Надсилаємо...';
 
-  // GAS GET запит — повертає нормальний CORS на відміну від POST
-  var getUrl = GAS_URL
-    +'?type=lead'
-    +'&name='+encodeURIComponent(name)
-    +'&contact='+encodeURIComponent(contact)
-    +'&botType='+encodeURIComponent(botType)
-    +'&date='+encodeURIComponent(new Date().toLocaleString('uk-UA'));
+  // Назви ботів для формування посилання
+  var BOT_NAMES = {
+    'commercial': 'CommercialHelp3rBot',
+    'finance':    'FinansikHelperBot'
+  };
 
-  function showSuccess(inviteLink) {
-    document.getElementById('modal-form-view').style.display='none';
-    document.getElementById('modal-success-view').style.display='block';
-    window.dataLayer = window.dataLayer || [];
-    window.dataLayer.push({event:'lead_form_submit',form_name:'access_request',bot_type:botType,bot_name:source});
+  // Відправляємо форму в GAS (fire and forget — відповідь не читаємо через CORS редирект)
+  fetch(GAS_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    body: 'type=lead'
+      +'&name='+encodeURIComponent(name)
+      +'&contact='+encodeURIComponent(contact)
+      +'&botType='+encodeURIComponent(botType)
+      +'&date='+encodeURIComponent(new Date().toLocaleString('uk-UA'))
+  });
 
-    if(inviteLink) {
-      // GAS повернув посилання — показуємо кнопку одразу
-      document.getElementById('success-title').textContent = 'Доступ готовий!';
-      document.getElementById('success-subtitle').textContent = 'Натисніть кнопку нижче щоб відкрити бота і розпочати 14-денний тріал.';
-      var invBtn = document.getElementById('invite-link-btn');
-      invBtn.href = inviteLink;
-      invBtn.className = 'invite-btn ' + (botType==='finance'?'fin':'comm');
-      document.getElementById('invite-btn-text').textContent = botType==='finance'?'▶️ Відкрити фінансовий бот':'▶️ Відкрити бізнес-бот';
-      invBtn.style.display = 'flex';
-      document.getElementById('invite-note-text').style.display = 'block';
-    }
-    // Якщо немає посилання — просто показуємо "Заявку отримано" без кнопки
-  }
+  // Показуємо success одразу — не чекаємо відповіді
+  // Кнопку показуємо завжди бо GAS вже обробляє форму і генерує інвайт
+  // Посилання веде на бота — після /start бот перевірить інвайт
+  btn.disabled=false; btn.textContent='→ Надіслати';
+  document.getElementById('modal-form-view').style.display='none';
+  document.getElementById('modal-success-view').style.display='block';
 
-  fetch(getUrl, {method:'GET'})
-  .then(function(r){ return r.json(); })
-  .then(function(data){
-    showSuccess(data && data.inviteLink ? data.inviteLink : null);
-  })
-  .catch(function(){
-    // Якщо навіть GET не вийшов — показуємо success без кнопки
-    // (форму вже відправили через no-cors як страховку)
-    fetch(GAS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/x-www-form-urlencoded'},
-      body:'type=lead&name='+encodeURIComponent(name)+'&contact='+encodeURIComponent(contact)+'&botType='+encodeURIComponent(botType)})
-    .finally(function(){ showSuccess(null); });
-  })
-  .finally(function(){btn.disabled=false;btn.textContent='→ Надіслати';});
+  // GTM
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({event:'lead_form_submit',form_name:'access_request',bot_type:botType,bot_name:source});
+
+  // Показуємо кнопку з посиланням на бота
+  var botName = BOT_NAMES[botType] || 'CommercialHelp3rBot';
+  var invBtn = document.getElementById('invite-link-btn');
+  // Посилання просто на бота — після /start бот покаже welcome або попросить інвайт
+  // GAS вже записав лід і згенерував інвайт — він прийде в Telegram від адміна
+  invBtn.href = 'https://t.me/' + botName;
+  invBtn.className = 'invite-btn ' + (botType==='finance'?'fin':'comm');
+  document.getElementById('invite-btn-text').textContent = botType==='finance'?'▶️ Відкрити фінансовий бот':'▶️ Відкрити бізнес-бот';
+  invBtn.style.display = 'flex';
+  document.getElementById('success-title').textContent = 'Доступ готовий!';
+  document.getElementById('success-subtitle').textContent = 'Натисніть кнопку нижче щоб відкрити бота і розпочати 14-денний тріал.';
+  document.getElementById('invite-note-text').style.display = 'block';
 }
 
 document.getElementById('modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
