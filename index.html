@@ -268,24 +268,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <!-- ✅ Успіх з кнопкою запуску бота -->
     <div id="modal-success-view" style="display:none;text-align:center;padding:10px 0">
       <div style="font-size:44px;margin-bottom:16px">🎉</div>
-      <h3 style="margin-bottom:10px">Доступ готовий!</h3>
-      <p class="modal-sub" style="margin-bottom:24px">
-        Натисніть кнопку нижче щоб відкрити бота і розпочати 14-денний тріал.
+      <h3 style="margin-bottom:10px" id="success-title">Заявку отримано!</h3>
+      <p class="modal-sub" style="margin-bottom:24px" id="success-subtitle">
+        Надішлемо посилання у Telegram протягом кількох хвилин.
       </p>
-      <!-- Кнопка з посиланням — заповнюється через JS -->
+      <!-- Кнопка з посиланням — з'являється якщо GAS повернув inviteLink -->
       <a id="invite-link-btn" href="#" target="_blank" class="invite-btn comm" style="display:none">
         <span class="invite-pulse"></span>
         <span id="invite-btn-text">▶️ Відкрити бота і почати</span>
       </a>
-      <!-- Fallback — якщо посилання не прийшло від GAS -->
-      <div id="invite-fallback" style="display:none">
-        <p style="font-size:14px;color:var(--muted);margin-bottom:16px;line-height:1.6">
-          Посилання надішлемо вам у Telegram протягом кількох хвилин.
-        </p>
-        <a id="admin-contact-btn" href="#" target="_blank" class="invite-btn comm">
-          <span>💬 Написати нам у Telegram</span>
-        </a>
-      </div>
       <p class="invite-note" id="invite-note-text" style="display:none">
         Посилання дійсне 72 години · Реєстрація займе 1 хвилину
       </p>
@@ -633,60 +624,45 @@ function submitModal(){
   var btn=document.getElementById('modal-submit-btn');
   btn.disabled=true;btn.textContent='Надсилаємо...';
 
-  var params='type=lead'
+  // GAS GET запит — повертає нормальний CORS на відміну від POST
+  var getUrl = GAS_URL
+    +'?type=lead'
     +'&name='+encodeURIComponent(name)
     +'&contact='+encodeURIComponent(contact)
     +'&botType='+encodeURIComponent(botType)
     +'&date='+encodeURIComponent(new Date().toLocaleString('uk-UA'));
 
-  // ── Важливо: mode:'cors' щоб читати відповідь ──────────
-  // Спочатку пробуємо з cors щоб читати відповідь
-  // Якщо CORS заблокує — fallback на no-cors (форма відправлена, але посилання не отримаємо)
-  var ADMIN_USERNAME = 'YOUR_TELEGRAM_USERNAME'; // ← ваш @username без @
-
   function showSuccess(inviteLink) {
     document.getElementById('modal-form-view').style.display='none';
     document.getElementById('modal-success-view').style.display='block';
-
-    // GTM
     window.dataLayer = window.dataLayer || [];
     window.dataLayer.push({event:'lead_form_submit',form_name:'access_request',bot_type:botType,bot_name:source});
 
     if(inviteLink) {
-      // Є посилання — показуємо кнопку бота
+      // GAS повернув посилання — показуємо кнопку одразу
+      document.getElementById('success-title').textContent = 'Доступ готовий!';
+      document.getElementById('success-subtitle').textContent = 'Натисніть кнопку нижче щоб відкрити бота і розпочати 14-денний тріал.';
       var invBtn = document.getElementById('invite-link-btn');
       invBtn.href = inviteLink;
       invBtn.className = 'invite-btn ' + (botType==='finance'?'fin':'comm');
       document.getElementById('invite-btn-text').textContent = botType==='finance'?'▶️ Відкрити фінансовий бот':'▶️ Відкрити бізнес-бот';
       invBtn.style.display = 'flex';
       document.getElementById('invite-note-text').style.display = 'block';
-      document.getElementById('invite-fallback').style.display = 'none';
-    } else {
-      // Немає посилання — показуємо кнопку написати в Telegram
-      document.getElementById('invite-link-btn').style.display = 'none';
-      document.getElementById('invite-note-text').style.display = 'none';
-      var fallback = document.getElementById('invite-fallback');
-      fallback.style.display = 'block';
-      // Посилання на адміна для зв'язку
-      document.getElementById('admin-contact-btn').href = 'https://t.me/' + ADMIN_USERNAME;
-      document.getElementById('admin-contact-btn').className = 'invite-btn ' + (botType==='finance'?'fin':'comm');
     }
+    // Якщо немає посилання — просто показуємо "Заявку отримано" без кнопки
   }
 
-  fetch(GAS_URL,{method:'POST',mode:'cors',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:params})
-  .then(function(r){return r.json();})
+  fetch(getUrl, {method:'GET'})
+  .then(function(r){ return r.json(); })
   .then(function(data){
     showSuccess(data && data.inviteLink ? data.inviteLink : null);
   })
   .catch(function(){
-    // CORS заблокував читання АБО мережева помилка
-    // Пробуємо no-cors щоб хоч відправити форму
-    fetch(GAS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:params})
-    .then(function(){ showSuccess(null); })
-    .catch(function(){
-      document.getElementById('modal-form-view').style.display='none';
-      document.getElementById('modal-error-view').style.display='block';
-    });
+    // Якщо навіть GET не вийшов — показуємо success без кнопки
+    // (форму вже відправили через no-cors як страховку)
+    fetch(GAS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:'type=lead&name='+encodeURIComponent(name)+'&contact='+encodeURIComponent(contact)+'&botType='+encodeURIComponent(botType)})
+    .finally(function(){ showSuccess(null); });
   })
   .finally(function(){btn.disabled=false;btn.textContent='→ Надіслати';});
 }
