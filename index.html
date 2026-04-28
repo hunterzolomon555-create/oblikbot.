@@ -261,6 +261,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       </div>
       <input type="hidden" id="modal-source" value="">
       <input type="hidden" id="modal-bottype" value="">
+      <!-- Honeypot -->
+      <input type="text" id="hp-website" name="website" style="position:absolute;left:-9999px;opacity:0;height:0;width:0" tabindex="-1" autocomplete="off">
       <button class="modal-submit" id="modal-submit-btn" onclick="submitModal()">→ Надіслати</button>
       <p class="modal-fine">Без спаму · Відповідаємо швидко</p>
     </div>
@@ -622,6 +624,25 @@ function submitModal(){
   if(!valid)return;
 
   var btn=document.getElementById('modal-submit-btn');
+
+  // ── Захист від спаму ─────────────────────────────────────
+  // 1. Honeypot — якщо заповнено, це бот
+  if (document.getElementById('hp-website').value !== '') {
+    btn.disabled=false; btn.textContent='→ Надіслати';
+    document.getElementById('modal-form-view').style.display='none';
+    document.getElementById('modal-success-view').style.display='block';
+    return;
+  }
+  // 2. Rate limiting — не частіше ніж раз на 60 секунд
+  var lastSubmit = localStorage.getItem('oblikbot_last_submit');
+  if (lastSubmit && Date.now() - parseInt(lastSubmit) < 60000) {
+    document.getElementById('err-contact').textContent = 'Зачекайте хвилину перед повторною відправкою';
+    document.getElementById('modal-contact').classList.add('err');
+    return;
+  }
+  localStorage.setItem('oblikbot_last_submit', String(Date.now()));
+  // ─────────────────────────────────────────────────────────
+
   btn.disabled=true;btn.textContent='Надсилаємо...';
 
   // Назви ботів для формування посилання
