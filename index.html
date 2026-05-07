@@ -46,7 +46,10 @@ a{color:inherit;text-decoration:none}
 .modal-fine{text-align:center;font-size:12px;color:var(--muted);margin-top:12px}
 .field-err{font-size:12px;color:#f07070;margin-top:5px;min-height:16px}
 
-/* ── Success view з кнопкою-посиланням ── */
+/* Honeypot — приховане поле для відсіювання ботів */
+.hp-field{position:absolute!important;left:-9999px!important;top:-9999px!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important}
+
+/* Success view */
 .invite-btn{
   display:flex;align-items:center;justify-content:center;gap:10px;
   width:100%;padding:16px;border-radius:40px;border:none;
@@ -251,18 +254,21 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <div id="modal-source-badge" style="display:none;margin-bottom:16px;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:600"></div>
       <div class="field">
         <label>Ваше ім'я</label>
-        <input type="text" id="modal-name" placeholder="Як до вас звертатись?">
+        <input type="text" id="modal-name" placeholder="Як до вас звертатись?" autocomplete="name">
         <div class="field-err" id="err-name"></div>
       </div>
       <div class="field">
         <label>Нікнейм у Telegram</label>
-        <input type="text" id="modal-contact" placeholder="@username">
+        <input type="text" id="modal-contact" placeholder="@username" autocomplete="off">
         <div class="field-err" id="err-contact"></div>
       </div>
       <input type="hidden" id="modal-source" value="">
       <input type="hidden" id="modal-bottype" value="">
-      <!-- Honeypot -->
-      <input type="text" id="hp-website" name="website" style="position:absolute;left:-9999px;opacity:0;height:0;width:0" tabindex="-1" autocomplete="off">
+      <!-- Honeypot — не змінюй! Боти заповнять це поле і будуть відсіяні -->
+      <div class="hp-field" aria-hidden="true">
+        <label>Website (не заповнюйте)</label>
+        <input type="text" id="hp-website" name="website" tabindex="-1" autocomplete="off">
+      </div>
       <button class="modal-submit" id="modal-submit-btn" onclick="submitModal()">→ Надіслати</button>
       <p class="modal-fine">Без спаму · Відповідаємо швидко</p>
     </div>
@@ -274,7 +280,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <p class="modal-sub" style="margin-bottom:24px" id="success-subtitle">
         Надішлемо посилання у Telegram протягом кількох хвилин.
       </p>
-      <!-- Кнопка з посиланням — з'являється якщо GAS повернув inviteLink -->
       <a id="invite-link-btn" href="#" target="_blank" class="invite-btn comm" style="display:none">
         <span class="invite-pulse"></span>
         <span id="invite-btn-text">▶️ Відкрити бота і почати</span>
@@ -539,7 +544,32 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <script>
 var GAS_URL='https://script.google.com/macros/s/AKfycbzY_RZVOaLvmKUNlbHeoDqVxGcVQVcbrPBum6Wjzx520lQxC2Ho92WH8x5H9Xje-Vgz1Q/exec';
 var PRICES={std:{m:499,q:419,y:349},pro:{m:599,q:499,y:449},fin:{m:149,q:129,y:99}};
-  (function(){
+var BOT_NAMES={'commercial':'CommercialHelp3rBot','finance':'FinansikHelperBot'};
+
+// ── UTM трекінг: зберігаємо при першому заході, чіпляємо до форми ──
+(function captureUTM(){
+  var params = new URLSearchParams(window.location.search);
+  var utmKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
+  var utm = {};
+  utmKeys.forEach(function(k){
+    var v = params.get(k);
+    if (v) utm[k] = v.slice(0, 100);
+  });
+  if (Object.keys(utm).length > 0) {
+    try { localStorage.setItem('oblikbot_utm', JSON.stringify(utm)); } catch(e) {}
+  }
+  // Реферер як fallback
+  if (!utm.utm_source && document.referrer) {
+    try {
+      var ref = new URL(document.referrer).hostname;
+      if (ref && ref.indexOf('oblikbot.tech') === -1) {
+        try { localStorage.setItem('oblikbot_referrer', ref); } catch(e) {}
+      }
+    } catch(e) {}
+  }
+})();
+
+(function(){
   var p = new URLSearchParams(window.location.search).get('page');
   if(p === 'finance' || p === 'fin') {
     document.addEventListener('DOMContentLoaded', function(){ showPage('fin'); });
@@ -600,6 +630,7 @@ function closeModal(){
   document.getElementById('modal').classList.remove('open');
   document.getElementById('modal-name').value='';
   document.getElementById('modal-contact').value='';
+  document.getElementById('hp-website').value='';
   clearErrors();
 }
 
@@ -616,78 +647,14 @@ function showFormView(){
   document.getElementById('modal-error-view').style.display='none';
 }
 
-function validateContact(val){
-  return (val.startsWith('@') && val.length>1)||/^\+?[\d\s\-\(\)]{7,}$/.test(val);
-}
-
-function submitModal(){
-  var name=document.getElementById('modal-name').value.trim();
-  var contact=document.getElementById('modal-contact').value.trim();
-  var source=document.getElementById('modal-source').value;
-  var botType=document.getElementById('modal-bottype').value;
-  var valid=true;
-  clearErrors();
-  if(!name){document.getElementById('err-name').textContent="Введіть ваше ім'я";document.getElementById('modal-name').classList.add('err');valid=false;}
-  if(!contact){document.getElementById('err-contact').textContent='Введіть нікнейм або телефон';document.getElementById('modal-contact').classList.add('err');valid=false;}
-  else if(!validateContact(contact)){document.getElementById('err-contact').textContent='Введіть @username або номер телефону';document.getElementById('modal-contact').classList.add('err');valid=false;}
-  if(!valid)return;
-
-  var btn=document.getElementById('modal-submit-btn');
-
-  // ── Захист від спаму ─────────────────────────────────────
-  // 1. Honeypot — якщо заповнено, це бот
-  if (document.getElementById('hp-website').value !== '') {
-    btn.disabled=false; btn.textContent='→ Надіслати';
-    document.getElementById('modal-form-view').style.display='none';
-    document.getElementById('modal-success-view').style.display='block';
-    return;
-  }
-  // 2. Rate limiting — не частіше ніж раз на 60 секунд
-  var lastSubmit = localStorage.getItem('oblikbot_last_submit');
-  if (lastSubmit && Date.now() - parseInt(lastSubmit) < 60000) {
-    document.getElementById('err-contact').textContent = 'Зачекайте хвилину перед повторною відправкою';
-    document.getElementById('modal-contact').classList.add('err');
-    return;
-  }
-  localStorage.setItem('oblikbot_last_submit', String(Date.now()));
-  // ─────────────────────────────────────────────────────────
-
-  btn.disabled=true;btn.textContent='Надсилаємо...';
-
-  // Назви ботів для формування посилання
-  var BOT_NAMES = {
-    'commercial': 'CommercialHelp3rBot',
-    'finance':    'FinansikHelperBot'
-  };
-
-  // Відправляємо форму в GAS (fire and forget — відповідь не читаємо через CORS редирект)
-  fetch(GAS_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-    body: 'type=lead'
-      +'&name='+encodeURIComponent(name)
-      +'&contact='+encodeURIComponent(contact)
-      +'&botType='+encodeURIComponent(botType)
-      +'&date='+encodeURIComponent(new Date().toLocaleString('uk-UA'))
-  });
-
-  // Показуємо success одразу — не чекаємо відповіді
-  // Кнопку показуємо завжди бо GAS вже обробляє форму і генерує інвайт
-  // Посилання веде на бота — після /start бот перевірить інвайт
-  btn.disabled=false; btn.textContent='→ Надіслати';
+function showSuccessView(botType){
   document.getElementById('modal-form-view').style.display='none';
   document.getElementById('modal-success-view').style.display='block';
+  document.getElementById('modal-error-view').style.display='none';
 
-  // GTM
-  window.dataLayer = window.dataLayer || [];
-  window.dataLayer.push({event:'lead_form_submit',form_name:'access_request',bot_type:botType,bot_name:source});
-
-  // Показуємо кнопку з посиланням на бота
+  // Кнопка з посиланням на бота
   var botName = BOT_NAMES[botType] || 'CommercialHelp3rBot';
   var invBtn = document.getElementById('invite-link-btn');
-  // Посилання просто на бота — після /start бот покаже welcome або попросить інвайт
-  // GAS вже записав лід і згенерував інвайт — він прийде в Telegram від адміна
   invBtn.href = 'https://t.me/' + botName;
   invBtn.className = 'invite-btn ' + (botType==='finance'?'fin':'comm');
   document.getElementById('invite-btn-text').textContent = botType==='finance'?'▶️ Відкрити фінансовий бот':'▶️ Відкрити бізнес-бот';
@@ -695,6 +662,102 @@ function submitModal(){
   document.getElementById('success-title').textContent = 'Доступ готовий!';
   document.getElementById('success-subtitle').textContent = 'Натисніть кнопку нижче щоб відкрити бота і розпочати 14-денний тріал.';
   document.getElementById('invite-note-text').style.display = 'block';
+}
+
+function validateContact(val){
+  return (val.startsWith('@') && val.length>1)||/^\+?[\d\s\-\(\)]{7,}$/.test(val);
+}
+
+function buildLeadParams(name, contact, botType){
+  var utm = {};
+  try { utm = JSON.parse(localStorage.getItem('oblikbot_utm') || '{}'); } catch(e) {}
+  var referrer = '';
+  try { referrer = localStorage.getItem('oblikbot_referrer') || ''; } catch(e) {}
+
+  var params = 'type=lead'
+    + '&name=' + encodeURIComponent(name)
+    + '&contact=' + encodeURIComponent(contact)
+    + '&botType=' + encodeURIComponent(botType)
+    + '&date=' + encodeURIComponent(new Date().toLocaleString('uk-UA'));
+
+  // UTM поля
+  ['utm_source','utm_medium','utm_campaign','utm_content','utm_term'].forEach(function(k){
+    if (utm[k]) params += '&' + k + '=' + encodeURIComponent(utm[k]);
+  });
+  if (referrer) params += '&referrer=' + encodeURIComponent(referrer);
+
+  return params;
+}
+
+function submitModal(){
+  var name=document.getElementById('modal-name').value.trim();
+  var contact=document.getElementById('modal-contact').value.trim();
+  var botType=document.getElementById('modal-bottype').value;
+  var hpValue=document.getElementById('hp-website').value;
+  var valid=true;
+  clearErrors();
+
+  if(!name){
+    document.getElementById('err-name').textContent="Введіть ваше ім'я";
+    document.getElementById('modal-name').classList.add('err');
+    valid=false;
+  }
+  if(!contact){
+    document.getElementById('err-contact').textContent='Введіть нікнейм або телефон';
+    document.getElementById('modal-contact').classList.add('err');
+    valid=false;
+  } else if(!validateContact(contact)){
+    document.getElementById('err-contact').textContent='Введіть @username або номер телефону';
+    document.getElementById('modal-contact').classList.add('err');
+    valid=false;
+  }
+  if(!valid)return;
+
+  var btn=document.getElementById('modal-submit-btn');
+
+  // ── Honeypot: якщо приховане поле заповнене — це бот ────
+  // Показуємо false-success щоб бот не повторював і не вчився обходити
+  if (hpValue !== '') {
+    showSuccessView(botType);
+    return;
+  }
+
+  // ── Rate limiting: не частіше ніж раз на 60 секунд ──────
+  var lastSubmit = null;
+  try { lastSubmit = localStorage.getItem('oblikbot_last_submit'); } catch(e) {}
+  if (lastSubmit && Date.now() - parseInt(lastSubmit) < 60000) {
+    document.getElementById('err-contact').textContent = 'Зачекайте хвилину перед повторною відправкою';
+    document.getElementById('modal-contact').classList.add('err');
+    return;
+  }
+  try { localStorage.setItem('oblikbot_last_submit', String(Date.now())); } catch(e) {}
+
+  btn.disabled=true; btn.textContent='Надсилаємо...';
+
+  // GTM event
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({
+    event:'lead_form_submit',
+    form_name:'access_request',
+    bot_type:botType
+  });
+
+  // Відправляємо форму через POST у no-cors режимі
+  // Показуємо success одразу — GAS працює асинхронно і інвайт точно генерується
+  var params = buildLeadParams(name, contact, botType);
+
+  fetch(GAS_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    body: params
+  }).catch(function(){ /* no-cors завжди не дає прочитати відповідь — ігноруємо */ });
+
+  // Через 800мс показуємо success — за цей час GAS точно встиг отримати дані
+  setTimeout(function(){
+    btn.disabled=false; btn.textContent='→ Надіслати';
+    showSuccessView(botType);
+  }, 800);
 }
 
 document.getElementById('modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
