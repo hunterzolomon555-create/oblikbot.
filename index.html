@@ -538,6 +538,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <script>
 var GAS_URL='https://script.google.com/macros/s/AKfycbzY_RZVOaLvmKUNlbHeoDqVxGcVQVcbrPBum6Wjzx520lQxC2Ho92WH8x5H9Xje-Vgz1Q/exec';
 var PRICES={std:{m:499,q:419,y:349},pro:{m:599,q:499,y:449},fin:{m:149,q:129,y:99}};
+  (function(){
+  var p = new URLSearchParams(window.location.search).get('page');
+  if(p === 'finance' || p === 'fin') {
+    document.addEventListener('DOMContentLoaded', function(){ showPage('fin'); });
+  } else if(p === 'business') {
+    document.addEventListener('DOMContentLoaded', function(){ showPage('business'); });
+  }
+})();
 
 function setBilling(page,period){
   var isFin=(page==='f');
