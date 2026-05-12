@@ -338,7 +338,8 @@ function load() {
     document.getElementById('recent').innerHTML = '<div class="loader"><div class="spin"></div>Завантаження...</div>';
   }
 
-  fetch(API + '?action=getData&userId=' + encodeURIComponent(userId))
+  var _initData = tg && tg.initData ? encodeURIComponent(tg.initData) : '';
+  fetch(API + '?action=getData&userId=' + encodeURIComponent(userId) + '&initData=' + _initData)
     .then(function(r){ return r.json(); })
     .then(function(res) {
       if (!res.ok) {
@@ -599,11 +600,12 @@ function submit() {
   var typeMap = {i:'Дохід', e:'Витрата', v:'Інвестиція'};
   
   postRecord({
-    amount: amt, 
-    currency: fCur, 
-    category: fCat, 
-    type: typeMap[fType], 
-    desc: document.getElementById('f-desc').value || ''
+    amount: amt,
+    currency: fCur,
+    category: fCat,
+    type: typeMap[fType],
+    desc: document.getElementById('f-desc').value || '',
+    initData: tg && tg.initData ? tg.initData : ''
   })
   .then(function(res) {
     btn.disabled = false; btn.textContent = 'Зберегти';
