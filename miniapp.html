@@ -252,6 +252,38 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 // Замінити на URL твого GAS deployment
 var API = 'https://script.google.com/macros/s/AKfycbwCLZfOYZitzhZDTfnPTvD9mw3TIgUFC8xZXGhX7nLexeIdil9hkmTZWz9z48zVaBew9g/exec';
 
+// ── Caching Constants & Helpers ───────────────────────────
+var CACHE_KEY = 'oblikbot_data_v1';
+var CACHE_TTL = 3 * 60 * 1000; // 3 хвилини
+
+function readCache() {
+  try {
+    var raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    var obj = JSON.parse(raw);
+    if (obj.ckey !== ckey && obj.userId !== userId) return null;
+    if (Date.now() - obj.ts > CACHE_TTL) return null;
+    return obj.data;
+  } catch(e) { return null; }
+}
+
+function writeCache(data) {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({
+      ts: Date.now(),
+      ckey: data.ckey || ckey,
+      userId: userId,
+      data: data
+    }));
+  } catch(e) {
+    console.warn('cache write failed:', e.message);
+  }
+}
+
+function clearCache() {
+  try { localStorage.removeItem(CACHE_KEY); } catch(e) {}
+}
+
 // ── State ─────────────────────────────────────────────────
 var tg        = window.Telegram && window.Telegram.WebApp;
 var userId    = '';
@@ -290,17 +322,48 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ── API ───────────────────────────────────────────────────
 function load() {
+  var cached = readCache();
+  if (cached) {
+    ckey       = cached.ckey || ckey;
+    D.records  = cached.records || [];
+    D.budgets  = cached.budgets || {};
+    D.goals    = cached.goals   || {};
+    if (cached.categories) {
+      CATS.i = cached.categories.inc || CATS.i;
+      CATS.e = cached.categories.exp || CATS.e;
+      CATS.v = cached.categories.inv || CATS.v;
+    }
+    renderAll();
+  } else {
+    document.getElementById('recent').innerHTML = '<div class="loader"><div class="spin"></div>Завантаження...</div>';
+  }
+
   fetch(API + '?action=getData&userId=' + encodeURIComponent(userId))
     .then(function(r){ return r.json(); })
     .then(function(res) {
-      if (!res.ok) { showToast('Помилка: ' + (res.error || '?')); return; }
-      ckey       = res.ckey || '';
+      if (!res.ok) {
+        if (cached) showToast('⚠️ Показуємо збережені дані');
+        else showToast('Помилка: ' + (res.error || '?'));
+        return;
+      }
+      ckey       = res.ckey || ckey;
       D.records  = res.records || [];
       D.budgets  = res.budgets || {};
       D.goals    = res.goals   || {};
+      
+      if (res.categories) {
+        CATS.i = res.categories.inc || CATS.i;
+        CATS.e = res.categories.exp || CATS.e;
+        CATS.v = res.categories.inv || CATS.v;
+      }
+
+      writeCache(res);
       renderAll();
     })
-    .catch(function() { showToast('Немає з\'єднання'); });
+    .catch(function() {
+      if (cached) showToast('⚠️ Офлайн — показуємо збережені дані');
+      else showToast('❌ Немає з\'єднання');
+    });
 }
 
 function postRecord(body) {
@@ -534,18 +597,49 @@ function submit() {
   var btn = document.getElementById('sbtn');
   btn.disabled = true; btn.textContent = 'Збереження...';
   var typeMap = {i:'Дохід', e:'Витрата', v:'Інвестиція'};
-  postRecord({amount: amt, currency: fCur, category: fCat, type: typeMap[fType], desc: document.getElementById('f-desc').value || ''})
-    .then(function(res) {
-      btn.disabled = false; btn.textContent = 'Зберегти';
-      if (res.ok) {
-        closeForm();
-        D.records.push({date: new Date().toISOString(), amount: res.amountUah || amt, category: fCat, type: typeMap[fType], desc: document.getElementById('f-desc').value || ''});
-        renderAll();
-        showToast('Записано!');
-        if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-      } else { showToast('Помилка: ' + (res.error || 'спробуйте ще раз')); }
-    })
-    .catch(function() { btn.disabled = false; btn.textContent = 'Зберегти'; showToast('Помилка з\'єднання'); });
+  
+  postRecord({
+    amount: amt, 
+    currency: fCur, 
+    category: fCat, 
+    type: typeMap[fType], 
+    desc: document.getElementById('f-desc').value || ''
+  })
+  .then(function(res) {
+    btn.disabled = false; btn.textContent = 'Зберегти';
+    if (res.ok) {
+      closeForm();
+      clearCache(); // Інвалідуємо стару версію кешу
+      D.records.push({
+        date:     new Date().toISOString(),
+        amount:   res.amountUah || amt,
+        category: fCat,
+        type:     typeMap[fType],
+        desc:     document.getElementById('f-desc').value || ''
+      });
+      renderAll();
+      
+      // Зберігаємо оновлені дані в кеш, щоб при наступному відкритті вони завантажились миттєво
+      writeCache({
+        ok: true, 
+        ckey: ckey,
+        records: D.records, 
+        budgets: D.budgets,
+        goals: D.goals, 
+        categories: { inc: CATS.i, exp: CATS.e, inv: CATS.v }
+      });
+      
+      showToast('✅ Записано!');
+      if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+    } else { 
+      showToast('Помилка: ' + (res.error || 'спробуйте ще раз')); 
+    }
+  })
+  .catch(function() { 
+    btn.disabled = false; 
+    btn.textContent = 'Зберегти'; 
+    showToast('Помилка з\'єднання'); 
+  });
 }
 
 // ── Toast ─────────────────────────────────────────────────
