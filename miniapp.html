@@ -368,13 +368,17 @@ function load() {
 }
 
 function postRecord(body) {
-  body.action = 'addRecord';
-  body.userId = userId;
-  return fetch(API, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(body)
-  }).then(function(r){ return r.json(); });
+  var _initData = tg && tg.initData ? encodeURIComponent(tg.initData) : '';
+  var params = 'action=addRecord'
+    + '&userId=' + encodeURIComponent(userId)
+    + '&amount=' + encodeURIComponent(body.amount)
+    + '&currency=' + encodeURIComponent(body.currency || 'UAH')
+    + '&category=' + encodeURIComponent(body.category)
+    + '&type=' + encodeURIComponent(body.type)
+    + '&desc=' + encodeURIComponent(body.desc || '')
+    + '&initData=' + _initData;
+  return fetch(API + '?' + params)
+    .then(function(r) { return r.json(); });
 }
 
 // ── Render ────────────────────────────────────────────────
