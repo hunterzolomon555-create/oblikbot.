@@ -223,7 +223,7 @@ footer p{font-size:12px;color:var(--muted)}
 .mob-tab{flex:1;padding:10px;border-radius:12px;border:none;font-family:var(--fb);font-size:13px;font-weight:600;cursor:pointer;background:rgba(255,255,255,0.05);color:var(--muted);transition:all .2s}
 .mob-tab.active{background:var(--a);color:#fff}
 .mob-tab.active.fin{background:var(--green);color:#0a0a0f}
-@media(max-width:768px){.family-wrap{grid-template-columns:1fr}}
+@media(max-width:768px){.family-wrap{grid-template-columns:1fr}.miniapp-grid{grid-template-columns:1fr!important}}
 @media(max-width:640px){
   nav{padding:14px 18px}
   .nav-tabs{display:none}
@@ -365,13 +365,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <div class="feat"><div class="feat-ic">📊</div><h3>Звіти які реально читаєш</h3><p>Щоденний підсумок о 21:00. Тижневий звіт у неділю. Фінанси за 7/30/90 днів або весь час.</p></div>
     <div class="feat"><div class="feat-ic">📥</div><h3>Масовий імпорт</h3><p>Заповнив шаблон Google Sheets — бот завантажив все одразу.</p></div>
     <div class="feat"><div class="feat-ic">💰</div><h3>Фінансовий бот</h3><p>Доходи, витрати, інвестиції. Бюджет, цілі накопичення, спільний бюджет з партнером.</p><span class="feat-badge">Входить у тариф Про</span></div>
-    <div class="feat">
-      <div class="feat-ic">📱</div>
+    <div class="feat"><div class="feat-ic">📱</div>
       <h3>Mini App дашборд</h3>
-      <p>Інтерактивний звіт прямо в Telegram. Графіки витрат, прогрес цілей,
-      бюджет і швидке додавання записів — без виходу з месенджера.</p>
-      <span class="feat-badge">Про і Фемілі+</span>
-    </div>
+      <p>Інтерактивна аналітика в Telegram — баланс, витрати, цілі.
+      Доступно в особистому чаті з ботом для власника підписки.</p>
+      <span class="feat-badge">Про і Фемілі+</span></div>
   </div>
 </div></section>
 <section id="b-pricing"><div class="container">
@@ -486,16 +484,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <div class="fc"><div class="fc-ic">🎯</div><h3>Бюджет по категоріях</h3><ul><li>Місячний ліміт на категорію</li><li>Попередження на 80%</li><li>Повідомлення при перевищенні</li></ul></div>
     <div class="fc"><div class="fc-ic">🏦</div><h3>Цілі накопичення</h3><ul><li>Відпустка, авто, резервний фонд</li><li>Прогрес у відсотках</li><li>Поповнення в один крок</li></ul></div>
     <div class="fc"><div class="fc-ic">✏️</div><h3>Редагування</h3><ul><li>Останні 5 записів</li><li>Виправити суму або категорію</li><li>Видалити помилковий запис</li></ul></div>
-    <div class="fc">
-      <div class="fc-ic">📱</div>
+    <div class="fc"><div class="fc-ic">📱</div>
       <h3>Mini App дашборд</h3>
       <ul>
         <li>Інтерактивні графіки витрат</li>
         <li>Прогрес цілей в реальному часі</li>
         <li>Швидке додавання записів</li>
-        <li>Доступно на тріалі та у Фемілі+</li>
-      </ul>
-    </div>
+        <li>Доступно в особистому чаті з ботом</li>
+        <li>На тріалі та у тарифах Про і Фемілі+</li>
+      </ul></div>
   </div>
 </div></section>
 <section id="f-family"><div class="container">
@@ -520,6 +517,39 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>
   </div>
 </div></section>
+<section id="f-miniapp" style="padding:100px 0;background:var(--bg3)">
+  <div class="container">
+    <div class="f-label">Mini App</div>
+    <h2 class="sec-title f-title">Твій особистий <span>дашборд</span></h2>
+    <p class="sec-sub">Повна аналітика прямо в Telegram — без додатків і браузера.</p>
+    <div class="miniapp-grid" style="margin-top:48px;background:var(--bg2);border:1px solid rgba(46,204,138,0.2);border-radius:24px;padding:40px;display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center">
+      <div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--bg3);border-radius:12px">
+            <span style="font-size:24px">📊</span>
+            <div><div style="font-size:14px;font-weight:600">Графіки витрат</div><div style="font-size:12px;color:var(--muted)">По категоріях за будь-який період</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--bg3);border-radius:12px">
+            <span style="font-size:24px">🏦</span>
+            <div><div style="font-size:14px;font-weight:600">Прогрес цілей</div><div style="font-size:12px;color:var(--muted)">Накопичення в реальному часі</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--bg3);border-radius:12px">
+            <span style="font-size:24px">➕</span>
+            <div><div style="font-size:14px;font-weight:600">Швидкий запис</div><div style="font-size:12px;color:var(--muted)">Дохід, витрата, інвестиція за 3 секунди</div></div>
+          </div>
+        </div>
+        <div style="margin-top:16px;padding:12px 16px;background:rgba(46,204,138,0.06);border-radius:10px;border:1px solid rgba(46,204,138,0.15);font-size:12px;color:var(--muted)">
+          📱 Доступно в особистому чаті з ботом · Тільки для власника підписки
+        </div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:80px;margin-bottom:16px">📱</div>
+        <div style="font-size:15px;font-weight:600;margin-bottom:8px">Відкривається прямо в Telegram</div>
+        <div style="font-size:13px;color:var(--muted)">Без виходу з месенджера.<br>Доступно на тріалі та в тарифах Про і Фемілі+</div>
+      </div>
+    </div>
+  </div>
+</section>
 <section id="f-who"><div class="container">
   <div class="f-label">Хто це використовує</div>
   <h2 class="sec-title f-title">Для <span>кого</span> цей бот</h2>
