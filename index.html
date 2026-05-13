@@ -566,9 +566,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       Фемілі + інтерактивний дашборд</div>
     <div class="plan-price" style="justify-content:center;margin-bottom:4px">
       <span class="cur">₴</span>
-      <span class="big" style="font-size:2.8rem">199</span>
+      <span class="big" id="f-finplus-price" style="font-size:2.8rem">199</span>
       <span class="per">/ місяць</span>
     </div>
+    <div class="price-total" id="f-finplus-total" style="text-align:center"></div>
     <div style="text-align:center;margin-bottom:28px">
       <div class="plan-first">✦ Перший місяць — лише 100 грн</div>
     </div>
@@ -599,7 +600,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 <script>
 var GAS_URL='https://script.google.com/macros/s/AKfycbz5mVI7LMInkxZMyIoRUWGw0vTsXkL9QW4FhzYNYtfVS4xyjdlNls71aaAJeu_xGuMSkg/exec';
-var PRICES={std:{m:499,q:419,y:349},pro:{m:649,q:549,y:499},fin:{m:149,q:129,y:99},finplus:{m:199,q:169,y:149}};
+var PRICES={std:{m:499,q:419,y:349},pro:{m:649,q:549,y:499},fin:{m:149,q:129,y:99},finplus:{m:199,q:169,y:129}};
 var BOT_NAMES={'commercial':'CommercialHelp3rBot','finance':'FinansikHelperBot'};
 
 // ── UTM трекінг: зберігаємо при першому заході, чіпляємо до форми ──
@@ -652,6 +653,15 @@ function setBilling(page,period){
     var finP=PRICES.fin[period];
     document.getElementById('f-fin-price').textContent=finP;
     document.getElementById('f-fin-total').innerHTML=period==='m'?'':'<span class="price-old">₴'+PRICES.fin.m+'</span>'+(period==='q'?'Списується ₴'+finP*3+' раз на квартал':'Списується ₴'+finP*12+' раз на рік');
+    var finPlusP=PRICES.finplus[period];
+    var finPlusPriceEl=document.getElementById('f-finplus-price');
+    var finPlusTotalEl=document.getElementById('f-finplus-total');
+    if(finPlusPriceEl)finPlusPriceEl.textContent=finPlusP;
+    if(finPlusTotalEl){
+      finPlusTotalEl.innerHTML=period==='m'?'':
+        '<span class="price-old">₴'+PRICES.finplus.m+'</span>'+
+        (period==='q'?'Списується ₴'+finPlusP*3+' раз на квартал':'Списується ₴'+finPlusP*12+' раз на рік');
+    }
   }
 }
 
