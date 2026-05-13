@@ -144,15 +144,31 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .pg{display:none;padding-bottom:76px}
 .pg.on{display:block}
 .divider{height:1px;background:rgba(0,0,0,.06);margin:8px 0}
+
+/* REFRESH BTN */
+.hdr-refresh{background:none;border:none;font-size:22px;line-height:1;padding:6px;cursor:pointer;border-radius:50%;color:var(--hint);transition:opacity .15s,transform .3s}
+.hdr-refresh:active{opacity:.6}
+.hdr-refresh.spin-once{transform:rotate(360deg)}
+
+/* PULL-TO-REFRESH */
+.ptr{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-content:center;height:0;overflow:hidden;background:var(--bg);transition:height .2s;z-index:50}
+.ptr.show{height:52px}
+.ptr .spin{margin-right:0}
 </style>
 </head>
 <body>
+
+<!-- PULL-TO-REFRESH INDICATOR -->
+<div class="ptr" id="ptr"><div class="spin"></div></div>
 
 <!-- HOME -->
 <div id="pg-home" class="pg on">
   <div class="hdr">
     <div class="hdr-left"><h1 id="greeting">ОблікБот</h1><p id="hdr-date"></p></div>
-    <div class="avatar" id="avatar">O</div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <button class="hdr-refresh" id="btn-reload" onclick="reload()" title="Оновити">↻</button>
+      <div class="avatar" id="avatar">O</div>
+    </div>
   </div>
   <div class="card">
     <div class="card-label">Загальний баланс</div>
@@ -647,6 +663,35 @@ function submit() {
     showToast('Помилка з\'єднання'); 
   });
 }
+
+// ── Reload ────────────────────────────────────────────────
+function reload() {
+  clearCache();
+  document.getElementById('recent').innerHTML = '<div class="loader"><div class="spin"></div>Завантаження...</div>';
+  var btn = document.getElementById('btn-reload');
+  if (btn) {
+    btn.classList.remove('spin-once');
+    void btn.offsetWidth; // reflow to restart animation
+    btn.classList.add('spin-once');
+    setTimeout(function(){ btn.classList.remove('spin-once'); }, 300);
+  }
+  load();
+}
+
+// Pull-to-refresh
+var _ptY = 0;
+document.addEventListener('touchstart', function(e) {
+  _ptY = e.touches[0].clientY;
+}, {passive: true});
+document.addEventListener('touchend', function(e) {
+  var dy = e.changedTouches[0].clientY - _ptY;
+  if (dy > 60 && window.scrollY === 0) {
+    var ptr = document.getElementById('ptr');
+    ptr.classList.add('show');
+    setTimeout(function(){ ptr.classList.remove('show'); }, 800);
+    reload();
+  }
+}, {passive: true});
 
 // ── Toast ─────────────────────────────────────────────────
 function showToast(msg) {
