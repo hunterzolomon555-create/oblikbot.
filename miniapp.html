@@ -263,7 +263,7 @@ var API = 'https://script.google.com/macros/s/AKfycbx1NgQaVhrfstEyO9zt1CcFsWnqOe
 
 // ── Caching Constants & Helpers ───────────────────────────
 var CACHE_KEY = 'oblikbot_data_v1';
-var CACHE_TTL = 3 * 60 * 1000; // 3 хвилини
+var CACHE_TTL = 30 * 1000; // 30 секунд
 
 function readCache() {
   try {
@@ -356,11 +356,13 @@ function load() {
         else showToast('Помилка: ' + (res.error || '?'));
         return;
       }
+      clearCache();
+
       ckey       = res.ckey || ckey;
       D.records  = res.records || [];
       D.budgets  = res.budgets || {};
       D.goals    = res.goals   || {};
-      
+
       if (res.categories) {
         CATS.i = res.categories.inc || CATS.i;
         CATS.e = res.categories.exp || CATS.e;
@@ -477,7 +479,10 @@ function calcSpent() {
 function budHtml(cat, limit, spent) {
   var pct = limit > 0 ? Math.min(100, Math.round(spent / limit * 100)) : 0;
   var cls = pct >= 100 ? 'over' : pct >= 80 ? 'warn' : 'ok';
-  return '<div class="bitem"><div class="brow"><span class="bcat">' + cat + '</span><span class="bpct">' + pct + '%</span></div>' +
+  return '<div class="bitem">' +
+    '<div class="brow"><span class="bcat">' + cat + '</span>' +
+    '<div style="display:flex;align-items:center;gap:8px"><span class="bpct">' + pct + '%</span>' +
+    '<button onclick="deleteBudget(\'' + cat.replace(/'/g, "\\'") + '\')" style="background:none;border:none;color:var(--hint);font-size:15px;cursor:pointer;padding:0;line-height:1">🗑</button></div></div>' +
     '<div class="bbar-bg"><div class="bbar ' + cls + '" style="width:' + pct + '%"></div></div>' +
     '<div class="bamts"><span>' + fmt(spent) + ' грн</span><span>ліміт: ' + fmt(limit) + ' грн</span></div></div>';
 }
@@ -493,28 +498,36 @@ function renderBudgetPreview() {
 function renderBudget() {
   var el   = document.getElementById('bud-body');
   var keys = Object.keys(D.budgets);
-  if (!keys.length) { el.innerHTML = '<div class="empty">Лімітів ще немає.<br>Налаштуйте в боті через меню "Бюджет".</div>'; return; }
-  var sp = calcSpent();
-  el.innerHTML = keys.map(function(c){ return budHtml(c, D.budgets[c], sp[c]||0); }).join('');
+  var sp   = calcSpent();
+  var html = keys.length
+    ? keys.map(function(c){ return budHtml(c, D.budgets[c], sp[c]||0); }).join('')
+    : '<div class="empty">Лімітів ще немає.</div>';
+  html += '<button onclick="setBudget()" style="width:100%;margin-top:10px;padding:12px;border-radius:10px;border:none;background:var(--sec);color:var(--btn);font-size:14px;font-weight:600;cursor:pointer">+ Додати ліміт</button>';
+  el.innerHTML = html;
 }
 
 function renderGoals() {
   var el   = document.getElementById('goals-body');
   var keys = Object.keys(D.goals);
-  if (!keys.length) { el.innerHTML = '<div class="empty">Цілей ще немає.<br>Додайте в боті через меню "Цілі".</div>'; return; }
-  el.innerHTML = keys.map(function(name) {
+  var html = keys.length ? keys.map(function(name) {
     var g   = D.goals[name];
     var pct = g.target > 0 ? Math.min(100, Math.round((g.saved||0) / g.target * 100)) : 0;
-    return '<div class="gitem"><div class="grow"><span class="gname">' + name + '</span><span class="gpct">' + pct + '%</span></div>' +
+    var esc = name.replace(/'/g, "\\'");
+    return '<div class="gitem">' +
+      '<div class="grow"><span class="gname">' + name + '</span>' +
+      '<div style="display:flex;align-items:center;gap:8px"><span class="gpct">' + pct + '%</span>' +
+      '<button onclick="deleteGoal(\'' + esc + '\')" style="background:none;border:none;color:var(--hint);font-size:15px;cursor:pointer;padding:0;line-height:1">🗑</button></div></div>' +
       '<div class="gbar-bg"><div class="gbar" style="width:' + pct + '%"></div></div>' +
       '<div class="gamts"><span>накоп: ' + fmt(g.saved||0) + ' грн</span><span>мета: ' + fmt(g.target) + ' грн</span></div>' +
       (pct >= 100 ? '<div style="font-size:12px;color:var(--green);margin-top:4px;font-weight:600">Ціль досягнуто!</div>'
                   : '<div style="font-size:12px;color:var(--hint);margin-top:4px">залишилось: ' + fmt(Math.max(0,g.target-(g.saved||0))) + ' грн</div>') +
-      '<button onclick="topupGoal(\'' + name.replace(/'/g, "\\'") + '\')" ' +
+      '<button onclick="topupGoal(\'' + esc + '\')" ' +
         'style="width:100%;margin-top:8px;padding:10px;border-radius:10px;border:none;background:var(--blue-bg);color:var(--blue);font-size:13px;font-weight:700;cursor:pointer">' +
         '+ Поповнити ціль</button>' +
       '</div>';
-  }).join('');
+  }).join('') : '<div class="empty">Цілей ще немає.</div>';
+  html += '<button onclick="setGoal()" style="width:100%;margin-top:10px;padding:12px;border-radius:10px;border:none;background:var(--sec);color:var(--btn);font-size:14px;font-weight:600;cursor:pointer">+ Нова ціль</button>';
+  el.innerHTML = html;
 }
 
 function renderStats() {
@@ -680,6 +693,64 @@ document.addEventListener('touchend', function(e) {
     reload();
   }
 });
+
+// ── API helper ────────────────────────────────────────────
+function _apiGet(params, onSuccess) {
+  var _initData = tg && tg.initData ? encodeURIComponent(tg.initData) : '';
+  var url = API + '?userId=' + encodeURIComponent(userId) + '&initData=' + _initData;
+  Object.keys(params).forEach(function(k) { url += '&' + k + '=' + encodeURIComponent(params[k]); });
+  fetch(url)
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (res.ok) { onSuccess(res); }
+      else { showToast('❌ ' + (res.error || 'Помилка')); }
+    })
+    .catch(function() { showToast('❌ Помилка з\'єднання'); });
+}
+
+// ── Budget management ─────────────────────────────────────
+function setBudget() {
+  var cat = prompt('Категорія витрат:');
+  if (!cat || !cat.trim()) return;
+  var amt = prompt('Місячний ліміт (грн) для "' + cat.trim() + '":');
+  if (!amt || isNaN(parseFloat(amt)) || parseFloat(amt) <= 0) return;
+  _apiGet({action: 'setBudget', category: cat.trim(), amount: parseFloat(amt)}, function() {
+    D.budgets[cat.trim()] = parseFloat(amt);
+    renderBudget(); renderBudgetPreview();
+    showToast('✅ Ліміт встановлено'); clearCache();
+  });
+}
+
+function deleteBudget(cat) {
+  if (!confirm('Видалити ліміт "' + cat + '"?')) return;
+  _apiGet({action: 'deleteBudget', category: cat}, function() {
+    delete D.budgets[cat];
+    renderBudget(); renderBudgetPreview();
+    showToast('✅ Ліміт видалено'); clearCache();
+  });
+}
+
+// ── Goals management ──────────────────────────────────────
+function setGoal() {
+  var name = prompt('Назва цілі:');
+  if (!name || !name.trim()) return;
+  var target = prompt('Сума мети (грн) для "' + name.trim() + '":');
+  if (!target || isNaN(parseFloat(target)) || parseFloat(target) <= 0) return;
+  _apiGet({action: 'setGoal', name: name.trim(), target: parseFloat(target)}, function() {
+    D.goals[name.trim()] = {target: parseFloat(target), saved: D.goals[name.trim()] ? (D.goals[name.trim()].saved || 0) : 0};
+    renderGoals();
+    showToast('✅ Ціль додано'); clearCache();
+  });
+}
+
+function deleteGoal(name) {
+  if (!confirm('Видалити ціль "' + name + '"?')) return;
+  _apiGet({action: 'deleteGoal', name: name}, function() {
+    delete D.goals[name];
+    renderGoals();
+    showToast('✅ Ціль видалено'); clearCache();
+  });
+}
 
 // ── Goals ─────────────────────────────────────────────────
 function topupGoal(name) {
